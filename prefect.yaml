@@ -1,0 +1,34 @@
+# Welcome to your prefect.yaml file! You can use this file for storing and managing
+# configuration for deploying your flows. We recommend committing this file to source
+# control along with your flow code.
+
+# Generic metadata about this project
+name: ai601-data-engineering
+prefect-version: 3.2.14
+
+# build section allows you to manage and build docker images
+build: null
+
+# push section allows you to manage if and how this project is uploaded to remote locations
+push: null
+
+# pull section allows you to provide instructions for cloning this project in remote locations
+pull:
+- prefect.deployments.steps.git_clone:
+    repository: git@github.com:Naveed333/ai601-data-engineering.git
+    branch: lab6_perfect
+
+# the deployments section allows you to provide configuration for deploying flows
+deployments:
+- name: ml_lab_pipline
+  version: null
+  tags: []
+  concurrency_limit: null
+  description: null
+  entrypoint: labs/lab6/ml_pipeline.py:ml_pipeline
+  parameters: {}
+  work_pool:
+    name: default
+    work_queue_name: null
+    job_variables: {}
+  schedules: []
