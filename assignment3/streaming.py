@@ -34,6 +34,7 @@ schema = StructType(
 )
 print("Defined schema:")
 print(schema)
+
 # 3) Read streaming data from Kafka topic "traffic_data".
 kafka_df = (
     spark.readStream.format("kafka")
@@ -48,26 +49,20 @@ print("Kafka stream created.")
 # 4) Convert the binary 'value' to string and parse JSON.
 json_df = kafka_df.selectExpr("CAST(value AS STRING) as json_str")
 parsed_df = json_df.select(from_json(col("json_str"), schema).alias("data"))
+# Flatten the nested structure.
 events_df = parsed_df.select("data.*")
 print("Parsed events_df schema:")
 events_df.printSchema()
 
-# (For debugging in an interactive session, you could use events_df.show())
-# Note: In streaming, actions trigger micro-batches.
-
 # 5) Data Quality Checks.
-# clean_df = parsed_df.filter(col("sensor_id").isNotNull() & col("timestamp").isNotNull())
-# 5) Data Quality Checks.
+# Filter on the flattened DataFrame (events_df).
 clean_df = events_df.filter(col("sensor_id").isNotNull() & col("timestamp").isNotNull())
-
-
 clean_df = clean_df.filter((col("vehicle_count") >= 0) & (col("average_speed") > 0))
 clean_df = clean_df.dropDuplicates(["sensor_id", "timestamp"])
 print("Cleaned data (logical plan):")
 clean_df.printSchema()
 
-# 6) (Optional) Convert timestamp string to actual TimestampType.
-# If your timestamp format is compatible, uncomment the following line.
+# 6) Convert timestamp string to actual TimestampType.
 clean_df = clean_df.withColumn("timestamp", col("timestamp").cast(TimestampType()))
 
 # --- Analytics ---
