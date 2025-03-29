@@ -9,7 +9,7 @@ services:
     image: confluentinc/cp-kafka:latest
     ports:
       - "9092:9092"
-      - "7071:7071"  # JMX Exporter port
+      - "7071:7071" # JMX Exporter port
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -30,6 +30,16 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana-oss:latest
+    platform: linux/amd64
+    container_name: grafana
+    restart: unless-stopped
     ports:
       - "3000:3000"
+    environment:
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: hamedkarbasi93-kafka-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  grafana_data:
