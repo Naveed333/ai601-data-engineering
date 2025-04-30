@@ -102,3 +102,4 @@ def process_batch(batch_df, batch_id):
 query = windowed_df.writeStream.outputMode("update").foreachBatch(process_batch).start()
 
 query.awaitTermination()
+

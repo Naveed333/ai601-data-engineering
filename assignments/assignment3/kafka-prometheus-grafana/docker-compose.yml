@@ -1,0 +1,45 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    ports:
+      - "9092:9092"
+      - "7071:7071" # JMX Exporter port
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 7071
+      KAFKA_JMX_OPTS: >-
+        -javaagent:/usr/app/jmx_prometheus_javaagent-0.20.0.jar=7071:/usr/app/jmx-exporter-config.yaml
+    volumes:
+      - ./jmx-exporter-config.yaml:/usr/app/jmx-exporter-config.yaml
+      - ./jmx_prometheus_javaagent-0.20.0.jar:/usr/app/jmx_prometheus_javaagent-0.20.0.jar
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    platform: linux/amd64
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: hamedkarbasi93-kafka-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  grafana_data:
