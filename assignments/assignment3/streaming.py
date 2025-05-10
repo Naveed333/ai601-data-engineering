@@ -25,7 +25,6 @@ from pyspark.sql.window import Window
 spark = SparkSession.builder.appName("TrafficMonitoring").getOrCreate()
 spark.sparkContext.setLogLevel("WARN")
 
-# Define the schema for traffic events.
 schema = StructType(
     [
         StructField("sensor_id", StringType(), True),
@@ -38,7 +37,6 @@ schema = StructType(
 print("Defined schema:")
 print(schema)
 
-# Read streaming data from Kafka topic "traffic_data".
 kafka_df = (
     spark.readStream.format("kafka")
     .option("kafka.bootstrap.servers", "localhost:9092")
@@ -49,18 +47,15 @@ kafka_df = (
 )
 print("Kafka stream created.")
 
-#  Convert the binary 'value' to string and parse JSON.
 json_df = kafka_df.selectExpr("CAST(value AS STRING) as json_str")
 parsed_df = json_df.select(from_json(col("json_str"), schema).alias("data"))
 
 
-# Flatten the nested structure.
 events_df = parsed_df.select("data.*")
 print("Parsed events_df schema:")
 events_df.printSchema()
 
 # -----------  Part 3    Data Quality Checks ----------------
-# Filter on the flattened DataFrame (events_df).
 clean_df = events_df.filter(col("sensor_id").isNotNull() & col("timestamp").isNotNull())
 clean_df = clean_df.filter((col("vehicle_count") >= 0) & (col("average_speed") > 0))
 clean_df = clean_df.dropDuplicates(["sensor_id", "timestamp"])
@@ -183,7 +178,6 @@ query_kafka_avg_speed = (
 print("Kafka sink query started for Average Speed.")
 
 
-# (c) Use foreachBatch to print the top sensors per micro-batch.
 def process_batch(batch_df, batch_id):
     print(f"\n--- Processing batch: {batch_id} ---")
     if batch_df.rdd.isEmpty():
@@ -192,7 +186,6 @@ def process_batch(batch_df, batch_id):
     print("Batch data before ranking:")
     batch_df.show(truncate=False)
 
-    # Apply window function on the batch DataFrame for ranking.
     ranking_window = Window.partitionBy("window").orderBy(desc("total_vehicle_count"))
     ranked_df = batch_df.withColumn("rank", row_number().over(ranking_window))
 
